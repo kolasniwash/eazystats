@@ -6,8 +6,8 @@ authors = ["kolasniwash <batchbrewdata@gmail.com>"]
 readme = "README.md"
 
 [tool.poetry.dependencies]
-python = "^3.9"
-pandas = "^2.0.3"
+python = "3.9.6"
+datapane = "^0.16.5"
 
 
 [build-system]
