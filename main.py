@@ -75,9 +75,10 @@ if __name__ == "__main__":
 
     view = dp.Group(
         blocks=[
-        # dp.Text("Team Position Stats"),
+        dp.HTML("<h1> Team Vez Playing Statistics </h1>"),
+        dp.HTML("<h3> Game Summaries by Position </h3>"),
         dp.DataTable(position_stats, label="Game Summaries by Position"),
-        # dp.Text("Team Stats"),
+        dp.HTML("<h3> Shot Making by Turn, Player, and Position </h3>"),
         dp.Select(
             blocks=[
                 dp.DataTable(position_breakdown_stats, label="Position by Turn and Shot Type"),
