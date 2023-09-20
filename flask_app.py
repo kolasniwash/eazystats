@@ -1,14 +1,16 @@
 import json
-
+import config
+import orm
 from flask import Flask, request, jsonify
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
+from sqlalchemy.sql import text
 
 import repository
-from model import Game, PlayerPosition
+from model import Game, PlayingLineup
 
-# orm.start_mappers()
-# get_session = sessionmaker(bind=create_engine(config.get_postgres_uri()))
+orm.start_mappers()
+get_session = sessionmaker(bind=create_engine(config.get_postgres_uri()))
 app = Flask(__name__)
 
 
@@ -22,8 +24,8 @@ def hello():
 @app.route("/game", methods=["POST"])
 def log_game_endpoint():
 
-    # session = get_session()
-    # repo = repository.SqlAlchemyRepository(session)
+    session = get_session()
+    repo = repository.SqlAlchemyRepository(session)
 
     answers = request.json["form_response"]["answers"]
     form_responses = dict()
@@ -36,7 +38,7 @@ def log_game_endpoint():
         else:
             form_responses[answer["field"]["ref"]] = answer["choice"]["label"]
 
-    lineup = PlayerPosition(
+    lineup = PlayingLineup(
         lead=form_responses["lead"],
         second=form_responses["second"],
         third=form_responses["third"],
@@ -54,6 +56,16 @@ def log_game_endpoint():
         reg_ends=form_responses["reg_ends"],
         tournament_round=form_responses["tournament_stage"]
     )
-    game.set_lineup(lineup=lineup)
 
-    return {"game": game.to_json()}, 201
+    session.add(game)
+    session.add(lineup)
+    session.commit()
+
+    game_id = session.execute(text("Select max(id), game_id from game_details"))
+    lineup_id = session.execute(text("Select max(id), lead from player_lineup"))
+
+    return {"game": game.to_json(),
+            "lineup": lineup.to_json(),
+            "game_id": game_id,
+            "lineup_id": lineup_id,
+            "stats-link": form_responses['stats-link']}, 201

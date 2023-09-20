@@ -90,32 +90,31 @@ data = {
 }
 
 
-
-
 # @pytest.mark.usefixtures("restart_api")
 def test_post_typeform_webhook(session):
-    url = "http://127.0.0.1:8000"
-    r = requests.post(f"{url}/v1/games/add", json=data)
+    url = "http://127.0.0.1:5000"
+    r = requests.post(f"{url}/game", json=data)
 
-    assert r.status_code == 200
-    response = r.json()["game_details"]
-    # game = json.loads(response["game"])
-    # lineup = json.loads(response["lineup"])
+    assert r.status_code == 201
+    response = r.json()
+    game = json.loads(response["game"])
+    lineup = json.loads(response["lineup"])
 
-    assert response["event_name"] == "WCT Tallinn"
-    assert response["opponent"] == "miller2"
-    assert response["lead"] == 'Sergio'
-    assert response["fourth"] == 'Luis'
-    assert response['stats-link'] == "/Users/nshaw/Code/kolasniwash/python/curling/eazystats/data/processed/ce-2023-b52-rr - ShotDataInput.csv"
-
+    assert game["event_name"] == "WCT Tallinn"
+    assert game["opponent"] == "miller2"
+    assert lineup["lead"] == 'Sergio'
+    assert lineup["fourth"] == 'Luis'
+    assert r.json()['stats-link'] == "/Users/nshaw/Code/kolasniwash/python/curling/eazystats/data/processed/ce-2023-b52-rr - ShotDataInput.csv"
+    assert r.json()['game_id'] == 1
+    assert r.json()['lineup_id'] == 1
 
 
 # @pytest.mark.usefixtures("restart_api")
 def test_hello_world(session):
-    url = "http://127.0.0.1:8000"
+    url = "http://127.0.0.1:5000"
     r = requests.get(f"{url}/")
     assert r.status_code == 200
-    assert r.json()["message"] == "Hello World"
+    assert r.json()["message"] == "Hello world!"
 
 
 # def test_get_all_game_details(session):

@@ -1,11 +1,11 @@
 import json
 from enum import Enum
-from collections import OrderedDict
 from dataclasses import dataclass
+from typing import Optional
 
 
-@dataclass
-class PlayerPosition:
+@dataclass(unsafe_hash=True)
+class PlayingLineup:
     lead: str
     second: str
     third: str
@@ -14,8 +14,11 @@ class PlayerPosition:
     vice: str
     alternate: str
 
+    def to_json(self):
+        return json.dumps(self, default=lambda o: o.__dict__)
 
-class ShotTurn(Enum):
+
+class ShotHandle(Enum):
     out_turn = "OUT"
     in_turn = "IN"
 
@@ -38,7 +41,7 @@ class ShotStat:
     end: int
     throw_in_end: int
     shot_type: str
-    turn: ShotTurn
+    handle: ShotHandle
     difficulty: int
     score: int
     draw_or_hit: str
@@ -57,20 +60,9 @@ class Game:
         self.reg_ends = reg_ends
         self.tournament_round = tournament_round
         self.game_id = hash(self)
-        self.lineup = None
-        self.shot_stats = OrderedDict()
 
     def set_lineup(self, lineup):
         self.lineup = lineup
-
-    def add_shot_stat(self, shot_stat):
-        if shot_stat.throw_in_end > 8:
-            raise ValueError("Throw in end must be between 1 and 8")
-
-        if shot_stat.end > self.reg_ends:
-            raise ValueError("End must be between 1 and the number of regulation ends")
-
-        self.shot_stats[(shot_stat.end, shot_stat.throw_in_end)] = shot_stat
 
     def __repr__(self):
         return f"<Game {self.game_id}>"
