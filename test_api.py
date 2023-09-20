@@ -1,8 +1,4 @@
-import json
-import pytest
 import requests
-
-from flask_app import get_typeform_answer_responses
 
 
 data = {
@@ -82,47 +78,76 @@ data = {
                 "field": {"id": "S0zg5GJJMWiv", "type": "dropdown", "ref": "stats-link"}
             }
         ],
-        "ending": {
-            "id": "DefaultTyScreen",
-            "ref": "default_tys"
-        }
+        # "ending": {
+        #     "id": "DefaultTyScreen",
+        #     "ref": "default_tys"
+        # }
     }
 }
 
+data2  = {
+    "answers": [
+            {
+                "type": "choice",
+                "choice": {"id": "siXDjhaKU5h1", "label": "WCT Tallinn", "ref": "778cf487-fc95-4935-8e31-009249a44137"},
+                "field": {"id": "1NOefQ220T1O", "type": "dropdown", "ref": "event_name"}
+            },
+            {
+                "type": "choice",
+                "choice": {"id": "dm7mlZbnmBlu", "label": "2023/24", "ref": "1a3d3502-b7ce-4c18-a909-314515368d7e"},
+                "field": {"id": "UkCaTuHQ3mY3", "type": "dropdown", "ref": "season"}
+            }]
+}
 
+data3 = {
+                "type": "choice",
+                "choice": {"id": "siXDjhaKU5h1", "label": "WCT Tallinn", "ref": "778cf487-fc95-4935-8e31-009249a44137"},
+                "field": {"id": "1NOefQ220T1O", "type": "dropdown", "ref": "event_name"}
+            }
 
+data4 = {
+    "type": "choice",
+    "choice": {"id": "siXDjhaKU5h1", "label": "WCT Tallinn", "ref": "778cf487-fc95-4935-8e31-009249a44137"},
+    "field": {"id": "1NOefQ220T1O", "type": "dropdown", "ref": "event_name"}
+}
 
+answer = {
+                "type": "choice",
+                "choice": {
+                    "id": "S28CLsE7T6Pd",
+                    "label": "WCT Lodz",
+                    "ref": "697ebba6-29db-47a1-a9c5-4a5631168cdc"
+                },
+                "field": {
+                    "id": "1NOefQ220T1O",
+                    "type": "dropdown",
+                    "ref": "event_name"
+                }
+            }
+from typeform_post_response import example_response
 # @pytest.mark.usefixtures("restart_api")
-def test_post_typeform_webhook(session):
+def test_add_game_detail():
     url = "http://127.0.0.1:8000"
-    r = requests.post(f"{url}/v1/games/add", json=data)
-
+    r = requests.post(f"{url}/eazystats/v1/games/add", json=example_response)
+    print(r.content)
     assert r.status_code == 200
     response = r.json()["game_details"]
     # game = json.loads(response["game"])
     # lineup = json.loads(response["lineup"])
 
-    assert response["event_name"] == "WCT Tallinn"
-    assert response["opponent"] == "miller2"
-    assert response["lead"] == 'Sergio'
+    assert response["event_name"] == 'WCT Lodz'
+    assert response["opponent"] == "miller strong"
+    assert response["lead"] == 'Mikel'
     assert response["fourth"] == 'Luis'
-    assert response['stats-link'] == "/Users/nshaw/Code/kolasniwash/python/curling/eazystats/data/processed/ce-2023-b52-rr - ShotDataInput.csv"
+    assert response['sheet_id'] == "1cfa8eWoapGHUpCYhgqgb4OrfagE536pQsgeh-sx9W1k"
+    assert response['sheet_name'] == "ShotDataInput"
 
 
 
 # @pytest.mark.usefixtures("restart_api")
-def test_hello_world(session):
+def test_root():
     url = "http://127.0.0.1:8000"
     r = requests.get(f"{url}/")
     assert r.status_code == 200
     assert r.json()["message"] == "Hello World"
-
-
-# def test_get_all_game_details(session):
-#     url = "http://127.0.0.1:5000"
-#     r = requests.get(f"{url}/game")
-#
-#     assert r.status_code == 200
-#     assert len(r.json()["games"]) == 1
-#     assert json.loads(r.json()["games"])["event_name"] == "WCT Tallinn"
 
