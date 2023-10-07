@@ -1,9 +1,14 @@
+import os
+
 import pandas as pd
 import sqlite3
+import psycopg2
 from fastapi import FastAPI
 from fastapi.responses import HTMLResponse
 import datapane as dp
 from app.model import TypeFormResponse
+from dotenv import load_dotenv
+
 
 from contextlib import contextmanager
 from app.queries import (
@@ -13,12 +18,14 @@ from app.queries import (
     create_games_tables,
     create_player_lineup_tables,
     create_shots_tables,
-    insert_shot_data_ddl
+    insert_shot_data_ddl,
+    game_summary_query,
+    get_player_position_histogram
 )
 
 
 app = FastAPI()
-
+load_dotenv()
 
 
 @contextmanager
@@ -29,9 +36,34 @@ def get_database_connection(db_name="./data/db/testing.db"):
     finally:
         connection.close()
 
+def get_postgres_connection_details():
+    host = os.getenv('POSTGRES_HOST')
+    port = os.getenv("HOST_PORT")
+    password = os.environ.get("POSTGRES_PASSWORD", "abc123")
+    schema = os.getenv("POSTGRES_SCHEMA")
+    user = os.getenv("POSTGRES_USER")
+    database = os.getenv("POSTGRES_DB")
+    return database, user, password, host, port, schema
+
+@contextmanager
+def get_postgres_connection():
+    database, user, password, host, port, schema = get_postgres_connection_details()
+
+    connection = psycopg2.connect(
+        database=database,
+        user=user,
+        password=password,
+        host=host,
+        port=port
+    )
+    try:
+        yield connection
+    finally:
+        connection.close()
 
 def setup_tables(reset_tables=False):
-    with get_database_connection() as conn:
+    with get_postgres_connection() as conn:
+    # with get_database_connection() as conn:
         cursor = conn.cursor()
         if reset_tables:
             reset_all_entry_tables(cursor)
@@ -45,14 +77,20 @@ def setup_tables(reset_tables=False):
 
 setup_tables(reset_tables=False)
 
+
+
+def run_query(query, db):
+    with sqlite3.connect(db) as conn:
+        return pd.read_sql(query, conn)
+
 @app.get("/")
 async def root():
     return {"message": "Hello World"}
 
-def save_shot_data_csv(sheet_id, sheet_name):
-    url = f"https://docs.google.com/spreadsheets/d/{sheet_id}/gviz/tq?tqx=out:csv&sheet={sheet_name}"
+def save_shot_data_csv(sheet_id):
+    url = f"https://docs.google.com/spreadsheets/d/{sheet_id}/gviz/tq?tqx=out:csv&sheet=ShotDataInput"
     df = pd.read_csv(url)
-    df.to_csv(f"./data/drop/{sheet_name}.csv", index=False)
+    df.to_csv(f"./data/drop/shot-data-input-{sheet_id}.csv", index=False)
     return df
 
 @app.post("/eazystats/v1/games/add")
@@ -69,26 +107,30 @@ async def add_game_detail(item: TypeFormResponse):
             form_responses[answer.field.ref] = answer.choice.label
 
 
-    with get_database_connection() as conn:
+    #with get_database_connection() as conn:
+    with get_postgres_connection() as conn:
         cursor = conn.cursor()
 
         game_details_query = insert_into_game_details_query(**form_responses)
         print(game_details_query)
         cursor.execute(game_details_query)
-        game_id = cursor.lastrowid
+        game_id = cursor.fetchone()[0]
         conn.commit()
 
         player_lineup_query = insert_into_player_lineup_query(game_id, **form_responses)
         cursor.execute(player_lineup_query)
         conn.commit()
 
-    df_shots = save_shot_data_csv(form_responses["sheet_id"], form_responses["sheet_name"])
+    df_shots = save_shot_data_csv(form_responses["sheet_id"])
 
-    with get_database_connection() as conn:
+    # with get_database_connection() as conn:
+    with get_postgres_connection() as conn:
         cursor = conn.cursor()
-        for item in df_shots.values.tolist():
-            item.insert(0, game_id)
-            cursor.execute(insert_shot_data_ddl(), item)
+        df_shots["game_id"] = game_id
+        df_shots.dropna(inplace=True)
+        for item in df_shots.iterrows():
+            insert_shot_data_query = insert_shot_data_ddl(item[1])
+            cursor.execute(insert_shot_data_query)
         conn.commit()
 
     return {"game_details": form_responses, "game_id": game_id}
@@ -107,6 +149,50 @@ async def get_stats():
     html = dp.stringify_report(view)
 
     return HTMLResponse(content=html, status_code=200)
+
+
+@app.get("/eazystats/v1/summary/games")
+async def get_stats_summary():
+    """Table with each game and a player % total in each game
+    + team total + team total zeros + made after miss"""
+
+    with get_database_connection() as conn:
+        games_summary = pd.read_sql(game_summary_query(), conn)
+
+    view = dp.Group(
+        blocks=[
+            dp.HTML("<h1> Team Vez Playing Statistics </h1>"),
+            dp.HTML("<h3> Game Summaries by Position </h3>"),
+            dp.DataTable(games_summary, label="Game Summaries by Position"),
+            ]
+    )
+
+    html = dp.stringify_report(view)
+    return HTMLResponse(content=html, status_code=200)
+
+@app.get("/eazystats/v1/summary/game/histogram")
+async def player_position_histogram():
+    """Table with each game and a player % total in each game
+    + team total + team total zeros + made after miss"""
+
+
+    with get_database_connection() as conn:
+        histogram = pd.read_sql(get_player_position_histogram(), conn)
+
+    plot = histogram[["thrower_position", "no_zero", "no_one", "no_two", "no_three", "no_four"]].plot.bar(x="thrower_position")
+
+    view = dp.Group(
+        blocks=[
+            dp.HTML("<h1> Team Vez Playing Statistics </h1>"),
+            dp.HTML("<h3> Game Histogram by Position </h3>"),
+            dp.DataTable(histogram, label="Game Summaries by Position"),
+            dp.Plot(plot)
+            ]
+    )
+
+    html = dp.stringify_report(view)
+    return HTMLResponse(content=html, status_code=200)
+
 
 @app.get("/eazystats/v1/stats/aggregates/by-position")
 async def get_aggregate_position_stats():

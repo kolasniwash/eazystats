@@ -16,7 +16,8 @@ def insert_into_game_details_query(**kwargs):
         '{kwargs['opponent']}',
         '{kwargs['reg_ends']}',
         '{kwargs['tournament_round']}')
-        ON CONFLICT (event_name, season, opponent, tournament_round) DO NOTHING;"""
+        ON CONFLICT (event_name, season, opponent, tournament_round) DO NOTHING
+        RETURNING game_id;"""
     # cursor.execute(insert_game_details_ddl, tuple(df_game_details.values[0]))
 
 
@@ -32,39 +33,45 @@ def insert_into_player_lineup_query(game_id, **kwargs):
     '{kwargs['fourth']}',
     '{kwargs['vice']}',
     '{kwargs['skip']}',
-    '{kwargs['alternate']}');"""
+    '{kwargs['alternate']}')
+    ON CONFLICT (game_id) DO NOTHING;"""
 
     # player_lineup_values = df_playing_lineup.values.tolist()[0]
     # player_lineup_values.insert(0, game_id)
     # cursor.execute(insert_player_lineup_ddl, tuple(player_lineup_values))
 
-def insert_shot_data_ddl():
-    return """
+def insert_shot_data_ddl(items):
+    return f"""
     INSERT INTO shots_table (
     game_id, 
-    end, 
+    end_num, 
     throw_in_end, 
     thrower_position,
     shot_type, 
     turn, 
-    difficulty, 
-    score, 
-    draw_or_hit)
-    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?);"""
+    score)
+    VALUES (
+    {items['game_id']}, 
+    {items['END']},
+    {items['THROW IN END']},
+    '{items['THROWER POSITION']}',
+    '{items['SHOT TYPE']}',
+    '{items['TURN']}',
+    {items['SCORE']});"""
 
 
 def create_games_tables(cursor):
     """ Executes DDL statements and creates tables in the database """
     game_details_ddl = """
-    CREATE TABLE IF NOT EXISTS game_details (
-    game_id INTEGER PRIMARY KEY AUTOINCREMENT,
+CREATE TABLE IF NOT EXISTS game_details (
+    game_id SERIAL PRIMARY KEY,
     event_name VARCHAR(255),
     season VARCHAR(255),
     date DATE,
     opponent VARCHAR(255),
     reg_ends INTEGER,
     tournament_round VARCHAR(255),
-    UNIQUE (event_name, season, opponent, tournament_round)
+    UNIQUE (game_id, event_name, season, opponent, tournament_round)
     );
     """
     cursor.execute(game_details_ddl)
@@ -72,8 +79,8 @@ def create_games_tables(cursor):
 
 def create_player_lineup_tables(cursor):
     player_lineup_ddl = """
-    CREATE TABLE IF NOT EXISTS player_lineup (    
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
+CREATE TABLE IF NOT EXISTS player_lineup (
+    id SERIAL PRIMARY KEY,
     game_id INTEGER,
     lead VARCHAR(255),
     second VARCHAR(255),
@@ -89,26 +96,24 @@ def create_player_lineup_tables(cursor):
 
 def create_shots_tables(cursor):
     create_shots_table_ddl = """
-    CREATE TABLE IF NOT EXISTS shots_table (
-    shot_id INTEGER PRIMARY KEY AUTOINCREMENT,
+CREATE TABLE IF NOT EXISTS shots_table (
+    shot_id SERIAL PRIMARY KEY,
     game_id INTEGER,
-    end INTEGER,
+    end_num INTEGER,
     throw_in_end INTEGER,
     thrower_position VARCHAR(255),
     shot_type VARCHAR(255),
     turn VARCHAR(255),
-    difficulty INTEGER,
     score INTEGER,
-    draw_or_hit VARCHAR(255),
-    UNIQUE (game_id, end, throw_in_end)
+    UNIQUE (game_id, end_num, throw_in_end),
     FOREIGN KEY (game_id) REFERENCES game_details (game_id)
     );"""
     cursor.execute(create_shots_table_ddl)
 
 def reset_all_entry_tables(cursor):
-    cursor.execute("DROP TABLE IF EXISTS game_details")
-    cursor.execute("DROP TABLE IF EXISTS player_lineup")
-    cursor.execute("DROP TABLE IF EXISTS shots_table")
+    cursor.execute("DROP TABLE game_details")
+    cursor.execute("DROP TABLE player_lineup")
+    cursor.execute("DROP TABLE shots_table")
 
 
 def aggregate_position_stats_query():
@@ -134,3 +139,61 @@ def aggregate_position_stats_query():
                 ga.team_pct
             FROM game_aggregates AS ga
             LEFT JOIN game_details AS gd ON ga.game_id = gd.game_id;"""
+
+def number_of_zeros_per_player():
+    return """
+    with zero_counts as (
+        select thrower_position, sum(CASE WHEN score = 0 THEN 1 ELSE 0 END) as num_zeros, count(*) as num_throws from shots_table group by thrower_position
+    )
+    select thrower_position,
+        num_zeros,
+        num_throws,
+        (num_zeros / num_throws) * 100 as pct_zeros
+        from zero_counts;"""
+
+def histogram_lookback_query():
+    pass
+
+def get_player_position_histogram():
+    return """
+    SELECT
+        thrower_position,
+        sum(1) filter (where score = 0) as no_zero,
+        sum(1) filter (where score = 1) as no_one,
+        sum(1) filter (where score = 2) as no_two,
+        sum(1) filter (where score = 3) as no_three,
+        sum(1) filter (where score = 4) as no_four,
+        ROUND(sum(1) filter (where score = 0) * 100 / count(*), 2)  AS pct_zero,
+        ROUND(sum(1) filter (where score = 1) * 100 / count(*), 2)  AS pct_one,
+        ROUND(sum(1) filter (where score = 2) * 100 / count(*), 2)  AS pct_two,
+        ROUND(sum(1) filter (where score = 3) * 100 / count(*), 2)  AS pct_three,
+        ROUND(sum(1) filter (where score = 4) * 100 / count(*), 2)  AS pct_four
+    FROM shots_table
+    WHERE shot_type is not null
+    GROUP BY thrower_position;"""
+
+def player_name_histogram():
+    pass
+
+
+def game_summary_query():
+    return """
+    SELECT 
+        gd.season,
+        gd.event_name,
+        gd.opponent,
+        st.thrower_position,
+        CASE WHEN (thrower_position = 'lead') THEN pl.lead
+            WHEN (thrower_position = 'second') THEN pl.second
+            WHEN (thrower_position = 'third') THEN pl.third
+            WHEN (thrower_position = 'fourth') THEN pl.fourth
+            ELSE 'unknown' END as player_name,
+        AVG(st.score) as total_pct, 
+        AVG(st.score) filter (where turn  = 'OUT') as out_pct, 
+        AVG(st.score) filter (where turn = 'IN') as in_pct, 
+        sum(1) filter (where st.score=0) as no_zeros 
+    FROM shots_table AS st
+    LEFT JOIN player_lineup as pl ON st.game_id = pl.game_id
+    LEFT JOIN game_details as gd ON st.game_id = gd.game_id
+    WHERE shot_type is not null 
+    GROUP BY st.game_id, st.thrower_position;"""
