@@ -6,6 +6,8 @@ import psycopg2
 from fastapi import FastAPI
 from fastapi.responses import HTMLResponse
 import datapane as dp
+from matplotlib import pyplot as plt
+
 from app.model import TypeFormResponse
 from dotenv import load_dotenv
 
@@ -20,7 +22,8 @@ from app.queries import (
     create_shots_tables,
     insert_shot_data_ddl,
     game_summary_query,
-    get_player_position_histogram
+    get_player_position_histogram,
+    get_shot_counts_query, get_player_averages_query
 )
 
 
@@ -117,9 +120,13 @@ async def add_game_detail(item: TypeFormResponse):
         game_id = cursor.fetchone()[0]
         conn.commit()
 
-        player_lineup_query = insert_into_player_lineup_query(game_id, **form_responses)
-        cursor.execute(player_lineup_query)
-        conn.commit()
+        positions = ['lead', 'second', 'third', 'fourth', 'alternate']
+        players = ['luis', 'nico', 'mikel', 'sergio', 'edu']
+        for position, player in zip(positions, players):
+            player_lineup_query = insert_into_player_lineup_query(game_id, position, player)
+            print(player_lineup_query)
+            cursor.execute(player_lineup_query)
+            conn.commit()
 
     df_shots = save_shot_data_csv(form_responses["sheet_id"])
 
@@ -136,18 +143,38 @@ async def add_game_detail(item: TypeFormResponse):
     return {"game_details": form_responses, "game_id": game_id}
 
 
-@app.get("/eazystats/v1/stats/")
-async def get_stats():
+@app.get("/eazystats/v1/shot_counts")
+async def shot_counts_view():
+
+    with get_postgres_connection() as conn:
+        shot_counts = pd.read_sql(get_shot_counts_query(), conn)
+
+    shot_counts = shot_counts.set_index("player").astype(int)
+    shot_count_norm = shot_counts.div(shot_counts.sum(axis=1), axis=0) * 100
+
+    ax = shot_count_norm.plot.bar(stacked=True, figsize=(3, 2), legend=False, fontsize=7)
+    ax_counts = shot_counts.plot.bar(stacked=True, figsize=(3, 2), legend=False, secondary_y=True, ax=ax, fontsize=7)
+    ax.legend(title="Scores", fontsize=7, loc='upper left', bbox_to_anchor=(1.2, 1))
+    ax.set_title("How to make more 3s and 4s?", fontsize=7)
+    ax.set_xlabel("Player name", fontsize=7)
+    ax.set_ylabel("% Shots", fontsize=7)
+    ax_counts.set_ylabel("No. Shots", fontsize=7)
+
+    for bar in ax_counts.patches:
+        bar.set_facecolor('none')
+
 
     view = dp.Group(
         blocks=[
-        dp.HTML("<h1> Team Vez Playing Statistics </h1>"),
-        dp.HTML("<h3> Game Summaries by Position </h3>"),
-        dp.HTML("<h3> Shot Making by Turn, Player, and Position </h3>")]
+            dp.HTML("<h1>How many of each shot score are we making?</h1>"),
+            dp.Plot(ax),
+            dp.HTML("<h3>Score count by player</h3>"),
+            dp.DataTable(shot_counts, label="Game shot counts")
+            ]
     )
 
+    dp.save_report(view, "./shot-counts-tallinn.html")
     html = dp.stringify_report(view)
-
     return HTMLResponse(content=html, status_code=200)
 
 
@@ -170,146 +197,53 @@ async def get_stats_summary():
     html = dp.stringify_report(view)
     return HTMLResponse(content=html, status_code=200)
 
-@app.get("/eazystats/v1/summary/game/histogram")
+@app.get("/eazystats/v1/performance")
 async def player_position_histogram():
-    """Table with each game and a player % total in each game
-    + team total + team total zeros + made after miss"""
 
 
-    with get_database_connection() as conn:
-        histogram = pd.read_sql(get_player_position_histogram(), conn)
+    with get_postgres_connection() as conn:
+        player_avg = pd.read_sql(get_player_averages_query(), conn)
 
-    plot = histogram[["thrower_position", "no_zero", "no_one", "no_two", "no_three", "no_four"]].plot.bar(x="thrower_position")
+    view_averages = player_avg.pivot(columns='player', values='average')
+    ax_averages = view_averages.plot(kind='box', figsize=(6, 3), fontsize=7)
+
+    # Customize the chart (optional)
+    ax_averages.set_title('Range of game scoring averages', fontsize=7)
+    ax_averages.set_xlabel('Player', fontsize=7)
+    ax_averages.set_ylabel('Score', fontsize=7)
+    ax_averages.set_yticks(range(0, 5))
+
+    fig, axes = plt.subplots(1, 2, figsize=(6, 3))
+
+    view_out = player_avg.pivot(columns='player', values='out_average')
+    ax_out = view_out.plot(kind='box', ax=axes[0], widths=0.5, fontsize=7)
+
+    # Customize the chart (optional)
+    ax_out.set_title('Averages - OUT TURN', fontsize=7)
+    ax_out.set_xlabel('Player', fontsize=7)
+    ax_out.set_ylabel('Score', fontsize=7)
+    ax_out.set_yticks(range(0, 5))
+
+
+    view_in = player_avg.pivot(columns='player', values='in_average')
+    ax_in = view_in.plot(kind='box', ax=axes[1], widths=0.5, fontsize=7)
+    ax_in.set_title('Averages - IN TURN', fontsize=7)
+    ax_in.set_xlabel('Player', fontsize=7)
+    ax_in.set_ylabel('Score', fontsize=7)
+    ax_in.set_yticks(range(0, 5))
+
 
     view = dp.Group(
         blocks=[
-            dp.HTML("<h1> Team Vez Playing Statistics </h1>"),
-            dp.HTML("<h3> Game Histogram by Position </h3>"),
-            dp.DataTable(histogram, label="Game Summaries by Position"),
-            dp.Plot(plot)
+            dp.HTML("<h1>How big a range is there between our games?</h1>"),
+            dp.Plot(ax_averages),
+            dp.Plot(fig),
+            dp.HTML("<h3>Game averages by player</h3>"),
+            dp.DataTable(player_avg, label="Game shot counts")
             ]
     )
 
+    dp.save_report(view, "./performance-tallinn.html")
     html = dp.stringify_report(view)
     return HTMLResponse(content=html, status_code=200)
 
-
-@app.get("/eazystats/v1/stats/aggregates/by-position")
-async def get_aggregate_position_stats():
-    def run_query(query, db):
-        with sqlite3.connect(db) as conn:
-            return pd.read_sql(query, conn)
-
-    # position_stats_query = get_aggregate_position_stats_query()
-    with get_database_connection() as conn:
-
-        query = """SELECT game_id, thrower_position, avg(score) from shots_table group by game_id, thrower_position;"""
-        position_stats = pd.read_sql(query, conn)
-
-    view = dp.Group(
-        blocks=[
-        dp.HTML("<h1> Team Vez Playing Statistics </h1>"),
-        dp.HTML("<h3> Game Summaries by Position </h3>"),
-        dp.DataTable(position_stats, label="Game Summaries by Position"),
-        dp.HTML("<h3> Shot Making by Turn, Player, and Position </h3>")]
-    )
-
-    html = dp.stringify_report(view)
-
-    return HTMLResponse(content=html, status_code=200)
-
-
-
-#
-# @app.get("/v1/stats/aggregates/player-breakdown")
-# async def get_aggregate_player_breakdown():
-#     db = './data/db/games_data_test.db'
-#
-#     query = player_breakdown_stats_query
-#     with sqlite3.connect(db) as conn:
-#         cur = conn.cursor()
-#         result = cur.execute(query)
-#         all_results = result.fetchall()
-#
-#     print(all_results)
-#
-#     return {"player-breakdown": all_results}
-#
-# @app.get("/v1/stats/aggregates/position-breakdown")
-# async def get_aggregate_position_breakdown():
-#     db = './data/db/games_data_test.db'
-#
-#     query = position_breakdown_stats_query
-#     with sqlite3.connect(db) as conn:
-#         cur = conn.cursor()
-#         result = cur.execute(query)
-#         all_results = result.fetchall()
-#
-#     print(all_results)
-#
-#     return {"position-breakdown": all_results}
-#
-#
-# @app.get("/v1/stats/aggregates/position-stats")
-# async def get_aggregate_position_stats():
-#     db = './data/db/games_data_test.db'
-#
-#     query = position_stats_query
-#     with sqlite3.connect(db) as conn:
-#         cur = conn.cursor()
-#         result = cur.execute(query)
-#         all_results = result.fetchall()
-#
-#     print(all_results)
-#
-#     return {"position-stats": all_results}
-#
-# position_stats_query = """
-#         WITH game_aggregates AS (
-#         SELECT
-#             game_id,
-#             ROUND(AVG(score) filter (where thrower_position = 'lead') * 100 / 4, 2)  AS lead,
-#             ROUND(AVG(score) filter (where thrower_position = 'second') * 100 / 4, 2)  AS second,
-#             ROUND(AVG(score) filter (where thrower_position = 'third') * 100 / 4, 2)  AS third,
-#             ROUND(AVG(score) filter (where thrower_position = 'fourth') * 100 / 4, 2)  AS fourth,
-#             ROUND(AVG(score)*100 / 4, 1) AS team_pct
-#         FROM shots_table
-#         GROUP BY game_id
-#         )
-#         SELECT
-#             gd.event_name,
-#             gd.opponent,
-#             ga.lead,
-#             ga.second,
-#             ga.third,
-#             ga.fourth,
-#             ga.team_pct
-#         FROM game_aggregates AS ga
-#         LEFT JOIN game_details AS gd ON ga.game_id = gd.game_id;"""
-#
-#
-# position_breakdown_stats_query = """
-#         SELECT
-#             thrower_position as Position,
-#             ROUND(AVG(score) filter (where draw_or_hit = 'D' and turn = 'IN') * 100 / 4, 2)  AS 'In Turn Draws',
-#             ROUND(AVG(score) filter (where draw_or_hit = 'H' and turn = 'IN') * 100 / 4, 2)  AS 'In Turn Hits',
-#             ROUND(AVG(score) filter (where draw_or_hit = 'D' and turn = 'OUT') * 100 / 4, 2)  AS 'Out Turn Draws',
-#             ROUND(AVG(score) filter (where draw_or_hit = 'H' and turn = 'OUT') * 100 / 4, 2)  AS 'Out Turn Hits',
-#             ROUND(AVG(score) filter (where draw_or_hit = 'D') * 100 / 4, 2)  AS 'Total Draws',
-#             ROUND(AVG(score) filter (where draw_or_hit = 'H') * 100 / 4, 2)  AS 'Total Hits'
-#         FROM shots_table
-#         GROUP BY thrower_position;
-# """
-#
-# player_breakdown_stats_query = """
-#         SELECT
-#             thrower_name as Player,
-#             ROUND(AVG(score) filter (where draw_or_hit = 'D' and turn = 'IN') * 100 / 4, 2)  AS 'In Turn Draws',
-#             ROUND(AVG(score) filter (where draw_or_hit = 'H' and turn = 'IN') * 100 / 4, 2)  AS 'In Turn Hits',
-#             ROUND(AVG(score) filter (where draw_or_hit = 'D' and turn = 'OUT') * 100 / 4, 2)  AS 'Out Turn Draws',
-#             ROUND(AVG(score) filter (where draw_or_hit = 'H' and turn = 'OUT') * 100 / 4, 2)  AS 'Out Turn Hits',
-#             ROUND(AVG(score) filter (where draw_or_hit = 'D') * 100 / 4, 2)  AS 'Total Draws',
-#             ROUND(AVG(score) filter (where draw_or_hit = 'H') * 100 / 4, 2)  AS 'Total Hits'
-#         FROM shots_table
-#         GROUP BY thrower_name;
-# """
