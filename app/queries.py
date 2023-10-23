@@ -21,20 +21,15 @@ def insert_into_game_details_query(**kwargs):
     # cursor.execute(insert_game_details_ddl, tuple(df_game_details.values[0]))
 
 
-def insert_into_player_lineup_query(game_id, **kwargs):
+def insert_into_player_lineup_query(game_id, position, player):
     return f"""
     INSERT INTO player_lineup (
-    game_id, lead, second, third, fourth, vice, skip, alternate)
+    game_id, position, player)
     VALUES (
     '{game_id}',
-    '{kwargs['lead']}',
-    '{kwargs['second']}',
-    '{kwargs['third']}',
-    '{kwargs['fourth']}',
-    '{kwargs['vice']}',
-    '{kwargs['skip']}',
-    '{kwargs['alternate']}')
-    ON CONFLICT (game_id) DO NOTHING;"""
+    '{position}',
+    '{player}')
+    ON CONFLICT (game_id, position, player) DO NOTHING;"""
 
     # player_lineup_values = df_playing_lineup.values.tolist()[0]
     # player_lineup_values.insert(0, game_id)
@@ -71,7 +66,7 @@ CREATE TABLE IF NOT EXISTS game_details (
     opponent VARCHAR(255),
     reg_ends INTEGER,
     tournament_round VARCHAR(255),
-    UNIQUE (game_id, event_name, season, opponent, tournament_round)
+    UNIQUE (event_name, season, opponent, tournament_round)
     );
     """
     cursor.execute(game_details_ddl)
@@ -79,18 +74,15 @@ CREATE TABLE IF NOT EXISTS game_details (
 
 def create_player_lineup_tables(cursor):
     player_lineup_ddl = """
-CREATE TABLE IF NOT EXISTS player_lineup (
-    id SERIAL PRIMARY KEY,
-    game_id INTEGER,
-    lead VARCHAR(255),
-    second VARCHAR(255),
-    third VARCHAR(255),
-    fourth VARCHAR(255),
-    vice VARCHAR(255),
-    skip VARCHAR(255),
-    alternate VARCHAR(255),
+CREATE TABLE IF NOT EXISTS player_lineup
+(
+    id       SERIAL PRIMARY KEY,
+    game_id  INTEGER,
+    position VARCHAR(255),
+    player   VARCHAR(255),
+    UNIQUE (game_id, position, player),
     FOREIGN KEY (game_id) REFERENCES game_details (game_id)
-    );
+);
     """
     cursor.execute(player_lineup_ddl)
 
@@ -111,9 +103,9 @@ CREATE TABLE IF NOT EXISTS shots_table (
     cursor.execute(create_shots_table_ddl)
 
 def reset_all_entry_tables(cursor):
-    cursor.execute("DROP TABLE game_details")
     cursor.execute("DROP TABLE player_lineup")
     cursor.execute("DROP TABLE shots_table")
+    cursor.execute("DROP TABLE game_details")
 
 
 def aggregate_position_stats_query():
@@ -197,3 +189,36 @@ def game_summary_query():
     LEFT JOIN game_details as gd ON st.game_id = gd.game_id
     WHERE shot_type is not null 
     GROUP BY st.game_id, st.thrower_position;"""
+
+
+def get_shot_counts_query():
+    return """
+        SELECT
+            player,
+            SUM((shot_counts::shots).zero) as zero,
+            SUM((shot_counts::shots).one) as one,
+            SUM((shot_counts::shots).two) as two,
+            SUM((shot_counts::shots).three) as three,
+            SUM((shot_counts::shots).four) as four
+        FROM statistics
+        WHERE shot_counts is not null
+            AND game_id BETWEEN 0 AND 3
+        GROUP BY player;
+    """
+
+def get_player_averages_query():
+    return """
+    SELECT game_id,
+       player,
+       (performance::stats).average,
+        (performance::stats).shot_count,
+        (performance::stats).shot_total,
+        (performance::stats).in_count,
+        (performance::stats).in_total,
+        (performance::stats).in_total / CAST((performance::stats).in_count AS real) as in_average,
+        (performance::stats).out_count,
+        (performance::stats).out_total,
+        (performance::stats).out_total / CAST((performance::stats).out_count AS real) as out_average
+    FROM statistics
+    WHERE game_id BETWEEN 0 and 3
+        AND position <> 'alternate';"""
