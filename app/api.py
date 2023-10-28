@@ -8,12 +8,12 @@ from fastapi.responses import HTMLResponse
 import datapane as dp
 from matplotlib import pyplot as plt
 
-from app.model import TypeFormResponse
+from model import TypeFormResponse
 from dotenv import load_dotenv
 
 
 from contextlib import contextmanager
-from app.queries import (
+from queries import (
     insert_into_game_details_query,
     insert_into_player_lineup_query,
     reset_all_entry_tables,
@@ -93,8 +93,13 @@ async def root():
 def save_shot_data_csv(sheet_id):
     url = f"https://docs.google.com/spreadsheets/d/{sheet_id}/gviz/tq?tqx=out:csv&sheet=ShotDataInput"
     df = pd.read_csv(url)
-    df.to_csv(f"./data/drop/shot-data-input-{sheet_id}.csv", index=False)
+    df.to_csv(f"../data/drop/shot-data-input-{sheet_id}.csv", index=False)
     return df
+
+
+# @app.post("/easystats/v1/game/new/")
+# async def form_submitted(item: FormData):
+#     return item
 
 @app.post("/eazystats/v1/games/add")
 async def add_game_detail(item: TypeFormResponse):
@@ -108,7 +113,6 @@ async def add_game_detail(item: TypeFormResponse):
             form_responses[answer.field.ref] = answer.text
         else:
             form_responses[answer.field.ref] = answer.choice.label
-
 
     #with get_database_connection() as conn:
     with get_postgres_connection() as conn:

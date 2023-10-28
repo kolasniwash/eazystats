@@ -85,5 +85,5 @@ if __name__ == "__main__":
             ]
         )]
     )
-    dp.save_report(view, path="../index.html")
+    dp.save_report(view, path="../frontend/index.html")
     dp.serve_app(view)

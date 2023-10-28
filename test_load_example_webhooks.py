@@ -10,6 +10,7 @@ from app.tallin_webhook_responses import (
     game_3,
     game_4
 )
+from app.bern_webhook_responses import game_1_bern
 
 
 def test_hello_world():
@@ -21,6 +22,7 @@ def test_hello_world():
 def test_load_test_webhooks():
     url = "http://127.0.0.1:8000"
     for test_game in [game_1, game_2, game_3, game_4]:
+    # for test_game in [game_1_bern]:
         r = requests.post(f"{url}/eazystats/v1/games/add", json=test_game)
 
         assert r.status_code == 200
