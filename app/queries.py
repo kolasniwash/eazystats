@@ -15,7 +15,7 @@ def insert_into_game_details_query(**kwargs):
         '{kwargs['date']}',
         '{kwargs['opponent']}',
         '{kwargs['reg_ends']}',
-        '{kwargs['tournament_round']}')
+        '{kwargs['tournament_stage']}')
         ON CONFLICT (event_name, season, opponent, tournament_round) DO NOTHING
         RETURNING game_id;"""
     # cursor.execute(insert_game_details_ddl, tuple(df_game_details.values[0]))

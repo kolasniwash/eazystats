@@ -8,7 +8,7 @@ from fastapi.responses import HTMLResponse
 import datapane as dp
 from matplotlib import pyplot as plt
 
-from model import TypeFormResponse
+from model import TypeFormResponse, GameInput
 from dotenv import load_dotenv
 
 
@@ -100,6 +100,24 @@ def save_shot_data_csv(sheet_id):
 # @app.post("/easystats/v1/game/new/")
 # async def form_submitted(item: FormData):
 #     return item
+
+
+@app.post("/eazystats/v1/games/new")
+async def input_new_game(game: GameInput):
+    game_dict = dict(game)
+
+    game_details_query = insert_into_game_details_query(**game_dict)
+    print(game_details_query)
+
+
+    positions = ["lead", "second", "third", "fourth", "alternate"]
+    for position in positions:
+        player_lineup_query = insert_into_player_lineup_query(99, position, game_dict[position])
+        print(player_lineup_query)
+    #     cursor.execute(player_lineup_query)
+    #     conn.commit()
+
+    return game
 
 @app.post("/eazystats/v1/games/add")
 async def add_game_detail(item: TypeFormResponse):

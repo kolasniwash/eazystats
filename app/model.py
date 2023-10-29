@@ -41,3 +41,21 @@ class TypeFormResponse(BaseModel):
     event_id: str
     event_type: str
     form_response: FormResponse
+
+
+class GameInput(BaseModel):
+    file: str
+    our_score: int
+    opponent_score: int
+    opponent: str
+    date: str
+    game_result: str
+    event_name: str
+    season: str
+    reg_ends: int
+    tournament_stage: str
+    lead: str
+    second: str
+    third: str
+    fourth: str
+    alternate: str
