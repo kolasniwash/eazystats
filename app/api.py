@@ -81,7 +81,6 @@ def setup_tables(reset_tables=False):
 setup_tables(reset_tables=False)
 
 
-
 def run_query(query, db):
     with sqlite3.connect(db) as conn:
         return pd.read_sql(query, conn)
@@ -89,6 +88,11 @@ def run_query(query, db):
 @app.get("/")
 async def root():
     return {"message": "Hello World"}
+
+def load_local_shots_data(path):
+    df = pd.read_csv(path)
+    df.to_csv(f"../data/processed/{path.split('/')[-1]}", index=False)
+    return df
 
 def save_shot_data_csv(sheet_id):
     url = f"https://docs.google.com/spreadsheets/d/{sheet_id}/gviz/tq?tqx=out:csv&sheet=ShotDataInput"
@@ -106,18 +110,32 @@ def save_shot_data_csv(sheet_id):
 async def input_new_game(game: GameInput):
     game_dict = dict(game)
 
-    game_details_query = insert_into_game_details_query(**game_dict)
-    print(game_details_query)
+    with get_postgres_connection() as conn:
+        cursor = conn.cursor()
+        game_details_query = insert_into_game_details_query(**game_dict)
+        cursor.execute(game_details_query)
+        game_id = cursor.fetchone()[0]
+        conn.commit()
 
+        positions = ["lead", "second", "third", "fourth", "alternate"]
+        for position in positions:
+            player_lineup_query = insert_into_player_lineup_query(game_id, position, game_dict[position])
+            print(player_lineup_query)
+            cursor.execute(player_lineup_query)
+            conn.commit()
 
-    positions = ["lead", "second", "third", "fourth", "alternate"]
-    for position in positions:
-        player_lineup_query = insert_into_player_lineup_query(99, position, game_dict[position])
-        print(player_lineup_query)
-    #     cursor.execute(player_lineup_query)
-    #     conn.commit()
+    df_shots = load_local_shots_data(game_dict["file"])
 
-    return game
+    with get_postgres_connection() as conn:
+        cursor = conn.cursor()
+        df_shots["game_id"] = game_id
+        df_shots.dropna(inplace=True, subset="SCORE")
+        for item in df_shots.iterrows():
+            insert_shot_data_query = insert_shot_data_ddl(item[1])
+            cursor.execute(insert_shot_data_query)
+        conn.commit()
+
+    return {"game_details": game_dict, "game_id": game_id}
 
 @app.post("/eazystats/v1/games/add")
 async def add_game_detail(item: TypeFormResponse):
