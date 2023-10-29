@@ -54,7 +54,7 @@ _INPUT_DICT["tournament_stage"] = st.selectbox(
 
 st.title("Playing Positions:")
 _PLAYERS = ["nico", "edu", "luis", "mikel", "sergio"]
-_INPUT_DICT["lead"] = st.selectbox("Lead", _PLAYERS, placeholder=_PLACEHOLDER_SELECT)
+_INPUT_DICT["lead"] = st.selectbox("Lead", _PLAYERS, placeholder="luis")
 _INPUT_DICT["second"] = st.selectbox("Second", _PLAYERS, placeholder=_PLACEHOLDER_SELECT)
 _INPUT_DICT["third"] = st.selectbox("Third", _PLAYERS, placeholder=_PLACEHOLDER_SELECT)
 _INPUT_DICT["fourth"] = st.selectbox("Fourth", _PLAYERS, placeholder=_PLACEHOLDER_SELECT)
