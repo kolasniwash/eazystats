@@ -182,6 +182,15 @@ async def add_game_detail(item: TypeFormResponse):
 
     return {"game_details": form_responses, "game_id": game_id}
 
+@app.get("/eazystats/v1/shot_counts/data")
+async def shot_counts_data():
+    with get_postgres_connection() as conn:
+        shot_counts = pd.read_sql(get_shot_counts_query(), conn)
+
+    shot_counts = shot_counts.set_index("player").astype(int)
+    shot_count_norm = shot_counts.div(shot_counts.sum(axis=1), axis=0) * 100
+
+    return {"data": shot_count_norm.to_json()}
 
 @app.get("/eazystats/v1/shot_counts")
 async def shot_counts_view():
