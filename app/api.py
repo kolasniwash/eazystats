@@ -192,6 +192,15 @@ async def shot_counts_data():
 
     return {"data": shot_count_norm.to_json()}
 
+@app.get("/eazystats/v1/summary/data")
+async def shot_counts_data():
+    with get_postgres_connection() as conn:
+        player_avg = pd.read_sql(get_player_averages_query(), conn)
+
+    return {"data": player_avg.to_json()}
+
+
+
 @app.get("/eazystats/v1/shot_counts")
 async def shot_counts_view():
 
