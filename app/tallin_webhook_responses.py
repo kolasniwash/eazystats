@@ -76,7 +76,7 @@ game_1 = {
         },
         {
           "id": "BSX0WQoyX3Th",
-          "ref": "tournament_round",
+          "ref": "tournament_stage",
           "type": "dropdown",
           "title": "Select tournament stage",
           "properties": {}
@@ -379,7 +379,7 @@ game_1 = {
         "field": {
           "id": "BSX0WQoyX3Th",
           "type": "dropdown",
-          "ref": "tournament_round"
+          "ref": "tournament_stage"
         }
       },
       {
@@ -532,7 +532,7 @@ game_2 = {
         },
         {
           "id": "BSX0WQoyX3Th",
-          "ref": "tournament_round",
+          "ref": "tournament_stage",
           "type": "dropdown",
           "title": "Select tournament stage",
           "properties": {}
@@ -835,7 +835,7 @@ game_2 = {
         "field": {
           "id": "BSX0WQoyX3Th",
           "type": "dropdown",
-          "ref": "tournament_round"
+          "ref": "tournament_stage"
         }
       },
       {
@@ -988,7 +988,7 @@ game_3 = {
         },
         {
           "id": "BSX0WQoyX3Th",
-          "ref": "tournament_round",
+          "ref": "tournament_stage",
           "type": "dropdown",
           "title": "Select tournament stage",
           "properties": {}
@@ -1291,7 +1291,7 @@ game_3 = {
         "field": {
           "id": "BSX0WQoyX3Th",
           "type": "dropdown",
-          "ref": "tournament_round"
+          "ref": "tournament_stage"
         }
       },
       {
@@ -1444,7 +1444,7 @@ game_4 = {
         },
         {
           "id": "BSX0WQoyX3Th",
-          "ref": "tournament_round",
+          "ref": "tournament_stage",
           "type": "dropdown",
           "title": "Select tournament stage",
           "properties": {}
@@ -1747,7 +1747,7 @@ game_4 = {
         "field": {
           "id": "BSX0WQoyX3Th",
           "type": "dropdown",
-          "ref": "tournament_round"
+          "ref": "tournament_stage"
         }
       },
       {
