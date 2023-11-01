@@ -1,12 +1,13 @@
 import json
-
 import streamlit as st
 import requests
 import matplotlib.pyplot as plt
 import pandas as pd
 
-st.title("Summary")
 
+_PLAYERS = ["nico", "edu", "luis", "sergio", "mikel"]
+
+st.title("Summary")
 
 def get_summary_data(event, playing_lineup):
     response = requests.get(
@@ -17,26 +18,49 @@ def get_summary_data(event, playing_lineup):
     return pd.read_json(response.json()["data"])
 
 def get_available_events_list():
-    return ["ALL", "WCT Bern", "WCT Tallinn"]
+    return ["WCT Bern", "WCT Tallinn"]
 
-selected_event = st.selectbox(
+event = st.sidebar.selectbox(
     "Select Event",
-    get_available_events_list()
+    get_available_events_list(),
+    index=None
+)
+
+lead = st.sidebar.selectbox(
+    "Lead:",
+    _PLAYERS,
+    index=None
+)
+
+second = st.sidebar.selectbox(
+    "Second:",
+    _PLAYERS,
+    index=None
+)
+
+third = st.sidebar.selectbox(
+    "Third:",
+    _PLAYERS,
+    index=None
+)
+
+fourth = st.sidebar.selectbox(
+    "Fourth:",
+    _PLAYERS,
+    index=None
 )
 
 lineup = {
-    "lead": "nico",
-    "second": "edu",
-    "third": "mikel",
-    "fourth": "sergio"
+    "lead": lead,
+    "second": second,
+    "third": third,
+    "fourth": fourth
 }
 
-player_avg = get_summary_data(event="WCT Bern", playing_lineup=lineup)
+player_avg = get_summary_data(
+    event=event,
+    playing_lineup=lineup)
 
-# if selected_event != 'ALL':
-#     player_avg = player_avg[player_avg['event'] == selected_event]
-#
-# player_avg = player_avg.drop(columns=['event'])
 
 
 fig, axes = plt.subplots(1, 1, figsize=(6,3))

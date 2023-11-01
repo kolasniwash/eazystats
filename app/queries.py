@@ -206,19 +206,17 @@ def get_shot_counts_query():
         GROUP BY player;
     """
 
-def get_player_averages_query(event=None, playing_lineup=None):
+def get_player_averages_query(**kwargs):
 
-    if event is not None:
-        event_filter = f"AND event = '{event}'"
+    positions = list()
+    for key, val in kwargs.items():
+        if key == 'event':
+            event_filter = f"AND event = '{val}'"
 
-    if playing_lineup is not None:
-        positions = list()
-        for position, player in playing_lineup.items():
-            if player is None:
+        if key in ('lead', 'second', 'third', 'fourth'):
+            if val is None:
                 continue
-            positions.append(f"(position = '{position}' AND player = '{player}')")
-
-        playing_lineup_filter = "AND " + " OR ".join(positions)
+            positions.append(f"(position = '{key}' AND player = '{val}')")
 
     query = """
     SELECT game_id,
@@ -238,6 +236,6 @@ def get_player_averages_query(event=None, playing_lineup=None):
         {event_filter} {playing_lineup_filter};"""
 
     return query.format(
-        event_filter="" if event is None else event_filter,
-        playing_lineup_filter="" if playing_lineup is None else playing_lineup_filter
+        event_filter="" if 'event' not in kwargs.keys() else event_filter,
+        playing_lineup_filter="AND " + " OR ".join(positions) if len(positions) > 0 else ""
     )
