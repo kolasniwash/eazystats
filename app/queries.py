@@ -206,8 +206,21 @@ def get_shot_counts_query():
         GROUP BY player;
     """
 
-def get_player_averages_query():
-    return """
+def get_player_averages_query(event=None, playing_lineup=None):
+
+    if event is not None:
+        event_filter = f"AND event = '{event}'"
+
+    if playing_lineup is not None:
+        positions = list()
+        for position, player in playing_lineup.items():
+            if player is None:
+                continue
+            positions.append(f"(position = '{position}' AND player = '{player}')")
+
+        playing_lineup_filter = "AND " + " OR ".join(positions)
+
+    query = """
     SELECT game_id,
        player,
        (performance::stats).average,
@@ -220,5 +233,11 @@ def get_player_averages_query():
         (performance::stats).out_total,
         (performance::stats).out_total / CAST((performance::stats).out_count AS real) as out_average
     FROM statistics
-    WHERE game_id BETWEEN 0 and 3
-        AND position <> 'alternate';"""
+    WHERE game_id BETWEEN 0 and 8
+        AND played_game
+        {event_filter} {playing_lineup_filter};"""
+
+    return query.format(
+        event_filter="" if event is None else event_filter,
+        playing_lineup_filter="" if playing_lineup is None else playing_lineup_filter
+    )

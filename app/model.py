@@ -59,3 +59,4 @@ class GameInput(BaseModel):
     third: str
     fourth: str
     alternate: str
+

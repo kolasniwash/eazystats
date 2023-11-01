@@ -1,3 +1,5 @@
+import json
+
 import streamlit as st
 import requests
 import matplotlib.pyplot as plt
@@ -6,13 +8,35 @@ import pandas as pd
 st.title("Summary")
 
 
-def get_summary_data():
-    response = requests.get("http://127.0.0.1:8000/eazystats/v1/summary/data")
+def get_summary_data(event, playing_lineup):
+    response = requests.get(
+        "http://127.0.0.1:8000/eazystats/v1/summary/data",
+        params={"event": event, **playing_lineup}
+    )
+    print(response)
     return pd.read_json(response.json()["data"])
 
-player_avg = get_summary_data()
+def get_available_events_list():
+    return ["ALL", "WCT Bern", "WCT Tallinn"]
 
-st.table(player_avg)
+selected_event = st.selectbox(
+    "Select Event",
+    get_available_events_list()
+)
+
+lineup = {
+    "lead": "nico",
+    "second": "edu",
+    "third": "mikel",
+    "fourth": "sergio"
+}
+
+player_avg = get_summary_data(event="WCT Bern", playing_lineup=lineup)
+
+# if selected_event != 'ALL':
+#     player_avg = player_avg[player_avg['event'] == selected_event]
+#
+# player_avg = player_avg.drop(columns=['event'])
 
 
 fig, axes = plt.subplots(1, 1, figsize=(6,3))

@@ -1,15 +1,17 @@
+import json
 import os
 
 import pandas as pd
 import sqlite3
 import psycopg2
-from fastapi import FastAPI
+from fastapi import FastAPI, Request
 from fastapi.responses import HTMLResponse
 import datapane as dp
 from matplotlib import pyplot as plt
 
 from model import TypeFormResponse, GameInput
 from dotenv import load_dotenv
+from typing import Optional
 
 
 from contextlib import contextmanager
@@ -183,19 +185,41 @@ async def add_game_detail(item: TypeFormResponse):
     return {"game_details": form_responses, "game_id": game_id}
 
 @app.get("/eazystats/v1/shot_counts/data")
-async def shot_counts_data():
+async def shot_counts_data(event):
+    query = get_shot_counts_query(event=event)
+
     with get_postgres_connection() as conn:
-        shot_counts = pd.read_sql(get_shot_counts_query(), conn)
+        shot_counts = pd.read_sql(query, conn)
 
     shot_counts = shot_counts.set_index("player").astype(int)
     shot_count_norm = shot_counts.div(shot_counts.sum(axis=1), axis=0) * 100
 
     return {"data": shot_count_norm.to_json()}
 
+
+
 @app.get("/eazystats/v1/summary/data")
-async def shot_counts_data():
+async def summary_data(request: Request):
+        # event: str, lead: str, second: str):
+
+    # params can be extracted from the dict object below.
+    # make it so can use generally
+    print("params ", request.query_params.items())
+    event = request.query_params.get("event", None)
+    lead = request.query_params.get("lead", None)
+    second = request.query_params.get("second", None)
+    third = request.query_params.get("third", None)
+    fourth = request.query_params.get("fourth", None)
+    playing_lineup = {
+        'lead': lead, 'second': second, 'third': third, 'fourth': fourth
+    }
+    query = get_player_averages_query(
+        event=event,
+        playing_lineup=playing_lineup
+    )
+    print(query)
     with get_postgres_connection() as conn:
-        player_avg = pd.read_sql(get_player_averages_query(), conn)
+        player_avg = pd.read_sql(query, conn)
 
     return {"data": player_avg.to_json()}
 
