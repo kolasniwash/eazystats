@@ -191,8 +191,19 @@ def game_summary_query():
     GROUP BY st.game_id, st.thrower_position;"""
 
 
-def get_shot_counts_query():
-    return """
+def get_shot_counts_query(**kwargs):
+
+    positions = list()
+    for key, val in kwargs.items():
+        if key == 'event':
+            event_filter = f"AND event = '{val}'"
+
+        if key in ('lead', 'second', 'third', 'fourth'):
+            if val is None:
+                continue
+            positions.append(f"(position = '{key}' AND player = '{val}')")
+
+    query = """
         SELECT
             player,
             SUM((shot_counts::shots).zero) as zero,
@@ -202,9 +213,16 @@ def get_shot_counts_query():
             SUM((shot_counts::shots).four) as four
         FROM statistics
         WHERE shot_counts is not null
-            AND game_id BETWEEN 0 AND 3
+            AND game_id BETWEEN 0 and {last_n_games}
+            {event_filter} {playing_lineup_filter}
         GROUP BY player;
     """
+
+    return query.format(
+        event_filter="" if 'event' not in kwargs.keys() else event_filter,
+        playing_lineup_filter="AND " + " OR ".join(positions) if len(positions) > 0 else "",
+        last_n_games=kwargs.get("last_n_games", 1)
+    )
 
 def get_player_averages_query(**kwargs):
 
