@@ -218,6 +218,7 @@ def get_player_averages_query(**kwargs):
                 continue
             positions.append(f"(position = '{key}' AND player = '{val}')")
 
+
     query = """
     SELECT game_id,
        player,
@@ -231,11 +232,12 @@ def get_player_averages_query(**kwargs):
         (performance::stats).out_total,
         (performance::stats).out_total / CAST((performance::stats).out_count AS real) as out_average
     FROM statistics
-    WHERE game_id BETWEEN 0 and 8
+    WHERE game_id BETWEEN 0 and {last_n_games}
         AND played_game
         {event_filter} {playing_lineup_filter};"""
 
     return query.format(
         event_filter="" if 'event' not in kwargs.keys() else event_filter,
-        playing_lineup_filter="AND " + " OR ".join(positions) if len(positions) > 0 else ""
+        playing_lineup_filter="AND " + " OR ".join(positions) if len(positions) > 0 else "",
+        last_n_games=kwargs.get("last_n_games", 1)
     )

@@ -9,16 +9,26 @@ _PLAYERS = ["nico", "edu", "luis", "sergio", "mikel"]
 
 st.title("Summary")
 
-def get_summary_data(event, playing_lineup):
+def get_summary_data(event, playing_lineup, last_n_games):
     response = requests.get(
         "http://127.0.0.1:8000/eazystats/v1/summary/data",
-        params={"event": event, **playing_lineup}
+        params={
+            "event": event,
+            **playing_lineup,
+            "last_n_games": last_n_games
+        }
     )
     print(response)
     return pd.read_json(response.json()["data"])
 
 def get_available_events_list():
     return ["WCT Bern", "WCT Tallinn"]
+
+last_n_games = st.select_slider(
+    label="Select Number of games to include:",
+    options=[i for i in range(1, 21)],
+    value=7
+)
 
 event = st.sidebar.selectbox(
     "Select Event",
@@ -59,7 +69,9 @@ lineup = {
 
 player_avg = get_summary_data(
     event=event,
-    playing_lineup=lineup)
+    playing_lineup=lineup,
+    last_n_games=last_n_games
+)
 
 
 
