@@ -1,16 +1,16 @@
 import requests
-from app.load_game_webhook_responses import (
+from backend.load_game_webhook_responses import (
     test_game_1,
     test_game_2,
     test_game_3,
 )
-from app.tallin_webhook_responses import (
+from backend.tallin_webhook_responses import (
     game_1,
     game_2,
     game_3,
     game_4
 )
-from app.bern_webhook_responses import game_1_bern
+from backend.bern_webhook_responses import game_1_bern
 
 
 def test_hello_world():
