@@ -3,7 +3,7 @@ import pandas as pd
 import sqlite3
 import psycopg2
 from fastapi import FastAPI, Request
-
+from endpoints.post_game import games
 from dotenv import load_dotenv
 
 from contextlib import contextmanager
@@ -23,6 +23,7 @@ from backend.db import get_postgres_connection
 app = FastAPI()
 load_dotenv()
 
+app.include_router(games.router)
 
 def setup_tables(reset_tables=False):
     with get_postgres_connection() as conn:

@@ -1,3 +1,4 @@
+from fastapi import APIRouter
 from backend.model import GameInput
 from backend.queries.insert import (
     insert_into_game_details_query,
@@ -7,13 +8,18 @@ from backend.queries.insert import (
 from pandas import read_csv
 from backend.db import get_postgres_connection
 
+router = APIRouter(
+    prefix="/games",
+    tags=["games"],
+)
+
 def load_local_shots_data(path):
     df = read_csv(path)
     df.to_csv(f"../data/processed/{path.split('/')[-1]}", index=False)
     return df
 
 
-@app.post("/eazystats/v1/games/new")
+@router.post("/new")
 async def input_new_game(game: GameInput):
     game_dict = dict(game)
 
