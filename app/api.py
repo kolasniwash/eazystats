@@ -4,24 +4,25 @@ import sqlite3
 import psycopg2
 from fastapi import FastAPI, Request
 
-
 from model import GameInput
 from dotenv import load_dotenv
 
-
-
 from contextlib import contextmanager
-from queries import (
+from queries.insert import (
     insert_into_game_details_query,
     insert_into_player_lineup_query,
+    insert_shot_data_ddl
+)
+from queries.ops import (
     reset_all_entry_tables,
     create_games_tables,
     create_player_lineup_tables,
-    create_shots_tables,
-    insert_shot_data_ddl,
-    game_summary_query,
-    get_player_position_histogram,
-    get_shot_counts_query, get_player_averages_query
+    create_shots_tables
+)
+
+from queries.aggregates import (
+    get_shot_counts_query,
+    get_player_averages_query
 )
 
 
@@ -64,7 +65,6 @@ def get_postgres_connection():
 
 def setup_tables(reset_tables=False):
     with get_postgres_connection() as conn:
-    # with get_database_connection() as conn:
         cursor = conn.cursor()
         if reset_tables:
             reset_all_entry_tables(cursor)
@@ -151,5 +151,3 @@ async def summary_data(request: Request):
         player_avg = pd.read_sql(query, conn)
 
     return {"data": player_avg.to_json()}
-
-
