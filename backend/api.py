@@ -12,17 +12,20 @@ from backend.query.ops import (
     create_player_lineup_tables,
     create_shots_tables
 )
-from backend.query.aggregates import (
-    get_shot_counts_query,
-    get_player_averages_query
-)
 from backend.db import get_postgres_connection
 
 app = FastAPI()
 load_dotenv()
 
-app.include_router(games.router)
-app.include_router(views.router)
+app_prefix = "/eazystats/v1"
+app.include_router(
+    prefix=app_prefix,
+    router=games.router
+)
+app.include_router(
+    prefix=app_prefix,
+    router=views.router
+)
 
 def setup_tables(reset_tables=False):
     with get_postgres_connection() as conn:
