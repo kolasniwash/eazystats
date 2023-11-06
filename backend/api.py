@@ -1,21 +1,18 @@
-import os
+
 import pandas as pd
 import sqlite3
-import psycopg2
 from fastapi import FastAPI, Request
-from backend.routes.post_game import games
+from backend.routes import games
 from dotenv import load_dotenv
 
-from contextlib import contextmanager
 
-
-from queries.ops import (
+from query.ops import (
     reset_all_entry_tables,
     create_games_tables,
     create_player_lineup_tables,
     create_shots_tables
 )
-from queries.aggregates import (
+from query.aggregates import (
     get_shot_counts_query,
     get_player_averages_query
 )

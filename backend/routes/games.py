@@ -1,6 +1,6 @@
 from fastapi import APIRouter
 from backend.models.inputs import GameInput
-from backend.queries.insert import (
+from backend.query.insert import (
     insert_into_game_details_query,
     insert_into_player_lineup_query,
     insert_shot_data_ddl
