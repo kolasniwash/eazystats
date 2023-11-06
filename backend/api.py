@@ -6,13 +6,13 @@ from backend.routes import games
 from dotenv import load_dotenv
 
 
-from query.ops import (
+from backend.query.ops import (
     reset_all_entry_tables,
     create_games_tables,
     create_player_lineup_tables,
     create_shots_tables
 )
-from query.aggregates import (
+from backend.query.aggregates import (
     get_shot_counts_query,
     get_player_averages_query
 )
