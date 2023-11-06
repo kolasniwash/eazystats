@@ -55,7 +55,7 @@ def process_game_data(game_details, playing_lineup):
 
 
 def connect_to_games_database():
-    conn = sqlite3.connect('./data/db/games_data_test.db')
+    conn = sqlite3.connect('../data/db/games_data_test.db')
     cursor = conn.cursor()
     return conn, cursor
 
@@ -219,4 +219,4 @@ def run(data_path):
 
 
 if __name__ == "__main__":
-    run("./data/drop")
+    run("../data/drop")

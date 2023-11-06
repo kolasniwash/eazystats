@@ -1,4 +1,3 @@
-import load
 import sqlite3
 import pandas as pd
 import datapane as dp
@@ -63,7 +62,7 @@ player_breakdown_stats_query = """
 if __name__ == "__main__":
     # load.run()
     db = './data/db/games_data_test.db'
-    con = sqlite3.connect('./data/db/games_data_test.db')
+    con = sqlite3.connect('../data/db/games_data_test.db')
 
     print(run_query("SELECT * FROM game_details", db))
     print(run_query("SELECT * FROM player_lineup", db))
@@ -86,5 +85,5 @@ if __name__ == "__main__":
             ]
         )]
     )
-    dp.save_report(view, path="index.html")
+    dp.save_report(view, path="../frontend/index.html")
     dp.serve_app(view)
