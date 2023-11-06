@@ -3,7 +3,7 @@ import pandas as pd
 import sqlite3
 import psycopg2
 from fastapi import FastAPI, Request
-from backend.endpoints.post_game import games
+from backend.routes.post_game import games
 from dotenv import load_dotenv
 
 from contextlib import contextmanager
