@@ -6,7 +6,7 @@ _PLAYERS = ["nico", "edu", "luis", "sergio", "mikel"]
 
 def get_shot_count_data(event, playing_lineup, last_n_games):
     response = requests.get(
-        "http://127.0.0.1:8000/eazystats/v1/shot_counts/data",
+        "http://127.0.0.1:8000/eazystats/v1/views/shot_counts",
         params={
             "event": event,
             **playing_lineup,

@@ -1,8 +1,8 @@
 
 import pandas as pd
 import sqlite3
-from fastapi import FastAPI, Request
-from backend.routes import games
+from fastapi import FastAPI
+from backend.routes import games, views
 from dotenv import load_dotenv
 
 
@@ -22,6 +22,7 @@ app = FastAPI()
 load_dotenv()
 
 app.include_router(games.router)
+app.include_router(views.router)
 
 def setup_tables(reset_tables=False):
     with get_postgres_connection() as conn:
@@ -48,30 +49,3 @@ async def root():
     return {"message": "Hello World"}
 
 
-
-@app.get("/eazystats/v1/shot_counts/data")
-async def shot_counts_data(request: Request):
-
-    kwargs = request.query_params
-    query = get_shot_counts_query(**kwargs)
-    print(query)
-    with get_postgres_connection() as conn:
-        shot_counts = pd.read_sql(query, conn)
-
-    shot_counts = shot_counts.set_index("player").astype(int)
-    shot_count_norm = shot_counts.div(shot_counts.sum(axis=1), axis=0) * 100
-
-    return {"data": shot_count_norm.to_json()}
-
-
-
-@app.get("/eazystats/v1/summary/data")
-async def summary_data(request: Request):
-
-    kwargs = request.query_params
-    query = get_player_averages_query(**kwargs)
-
-    with get_postgres_connection() as conn:
-        player_avg = pd.read_sql(query, conn)
-
-    return {"data": player_avg.to_json()}
