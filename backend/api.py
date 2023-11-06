@@ -3,10 +3,11 @@ import pandas as pd
 import sqlite3
 import psycopg2
 from fastapi import FastAPI, Request
-from endpoints.post_game import games
+from backend.endpoints.post_game import games
 from dotenv import load_dotenv
 
 from contextlib import contextmanager
+
 
 from queries.ops import (
     reset_all_entry_tables,
