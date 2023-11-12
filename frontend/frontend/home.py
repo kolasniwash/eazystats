@@ -1,4 +1,5 @@
 import json
+from datetime import datetime
 
 import streamlit as st
 import requests
@@ -64,7 +65,13 @@ if st.button("Submit"):
     print("Submit")
     print(_INPUT_DICT)
 
-    requests.post("http://127.0.0.1:8000/eazystats/v1/games/new",
+    r = requests.post("http://backend:8000/eazystats/v1/games/new",
                   data=json.dumps(_INPUT_DICT))
+    print(r.status_code)
+    if r.status_code == 200:
+        filename = f"{_INPUT_DICT['event']}-{_INPUT_DICT['opponent']}-{datetime.now()}.json"
+        with open(f"~/data/raw/{filename}", 'w') as json_file:
+            json.dump(_INPUT_DICT, json_file)
 
+        st.success("Game successfully submitted!")
 
