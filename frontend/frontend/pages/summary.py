@@ -11,7 +11,7 @@ st.title("Summary")
 
 def get_summary_data(event, playing_lineup, last_n_games):
     response = requests.get(
-        "http://127.0.0.1:8000/eazystats/v1/views/player_averages",
+        "http://backend:8000/eazystats/v1/views/player_averages",
         params={
             "event": event,
             **playing_lineup,

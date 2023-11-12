@@ -7,8 +7,8 @@ load_dotenv()
 
 
 def get_postgres_connection_details():
-    host = os.getenv('POSTGRES_HOST')
-    port = os.getenv("HOST_PORT")
+    host = os.getenv('PG_HOST_URL')
+    port = os.getenv("PG_HOST_PORT")
     password = os.environ.get("POSTGRES_PASSWORD", "abc123")
     schema = os.getenv("POSTGRES_SCHEMA")
     user = os.getenv("POSTGRES_USER")
