@@ -5,5 +5,7 @@ build backend:
 	docker compose up --build Dockerfile.backend
 
 run:
-	docker compose up
+	docker-compose up -d
 
+stop:
+	docker-compose down
