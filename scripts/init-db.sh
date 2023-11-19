@@ -6,7 +6,7 @@ psql \
     -v ON_ERROR_STOP=1 \
     --username $POSTGRES_USER \
     --dbname $POSTGRES_DB \
-    < /docker-entrypoint-initdb.d/eazystats.sql
+    < /docker-entrypoint-initdb.d/eazystats.dump
 
 
 # Check if the path is a directory using the -d flag and
