@@ -2,7 +2,6 @@ from typing import List, Optional
 from pydantic import BaseModel
 
 class GameInput(BaseModel):
-    file: str
     our_score: int
     opponent_score: int
     opponent: str
