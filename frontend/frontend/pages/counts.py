@@ -19,7 +19,7 @@ def get_shot_count_data(event, playing_lineup, last_n_games):
 st.title("Counts")
 
 def get_available_events_list():
-    return ["WCT Bern", "WCT Tallinn"]
+    return ["WCT Bern", "WCT Tallinn", "WCT Lodz"]
 
 last_n_games = st.select_slider(
     label="Select Number of games to include:",
