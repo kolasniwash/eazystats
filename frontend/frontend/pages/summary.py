@@ -83,6 +83,18 @@ if scatter_view:
     )
 
     st.altair_chart(scatter_plot, use_container_width=True)
+
+    scatter_plot_inturn = alt.Chart(player_avg).mark_circle().encode(
+        y=alt.Y('in_average', scale=alt.Scale(domain=[0, 4], clamp=True)),
+        x=alt.X('player')
+    )
+    scatter_plot_outturn = alt.Chart(player_avg).mark_circle().encode(
+        y=alt.Y('out_average', scale=alt.Scale(domain=[0, 4], clamp=True)),
+        x=alt.X('player')
+    )
+    st.altair_chart(scatter_plot_inturn)
+
+    st.altair_chart(scatter_plot_outturn)
 else:
 
     fig, axes = plt.subplots(1, 1, figsize=(6, 3))
