@@ -23,8 +23,8 @@ def get_available_events_list():
 
 last_n_games = st.select_slider(
     label="Select Number of games to include:",
-    options=[i for i in range(1, 50)],
-    value=7
+    options=[i for i in range(1, 51)],
+    value=50
 )
 
 event = st.sidebar.selectbox(

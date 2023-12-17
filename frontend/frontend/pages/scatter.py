@@ -67,7 +67,7 @@ lineup = {
     "fourth": fourth
 }
 
-player_avg = get_summary_data(
+data = get_summary_data(
     event=event,
     playing_lineup=lineup,
     last_n_games=last_n_games
@@ -75,34 +75,43 @@ player_avg = get_summary_data(
 
 
 
-fig, axes = plt.subplots(1, 1, figsize=(6,3))
-view_averages = player_avg.pivot(columns='player', values='average')
-ax_averages = view_averages.plot(kind='box', ax=axes, fontsize=7)
+# fig, axes = plt.subplots(1, 1, figsize=(6,3))
+# view_averages = player_avg.pivot(columns='player', values='average')
+# ax_averages = view_averages.plot(kind='box', ax=axes, fontsize=7)
+#
+# # Customize the chart (optional)
+# ax_averages.set_title('Range of game scoring averages', fontsize=7)
+# ax_averages.set_xlabel('Player', fontsize=7)
+# ax_averages.set_ylabel('Score', fontsize=7)
+# ax_averages.set_yticks(range(0, 5))
+#
+# st.pyplot(fig)
+#
+#
+# fig, axes = plt.subplots(1, 2, figsize=(6, 3))
+# view_out = player_avg.pivot(columns='player', values='out_average')
+# ax_out = view_out.plot(kind='box', ax=axes[0], widths=0.5, fontsize=7)
+#
+# # Customize the chart (optional)
+# ax_out.set_title('Averages - OUT TURN', fontsize=7)
+# ax_out.set_xlabel('Player', fontsize=7)
+# ax_out.set_ylabel('Score', fontsize=7)
+# ax_out.set_yticks(range(0, 5))
+#
+# view_in = player_avg.pivot(columns='player', values='in_average')
+# ax_in = view_in.plot(kind='box', ax=axes[1], widths=0.5, fontsize=7)
+# ax_in.set_title('Averages - IN TURN', fontsize=7)
+# ax_in.set_xlabel('Player', fontsize=7)
+# ax_in.set_ylabel('Score', fontsize=7)
+# ax_in.set_yticks(range(0, 5))
+#
+# st.pyplot(fig)
+#
 
-# Customize the chart (optional)
-ax_averages.set_title('Range of game scoring averages', fontsize=7)
-ax_averages.set_xlabel('Player', fontsize=7)
-ax_averages.set_ylabel('Score', fontsize=7)
-ax_averages.set_yticks(range(0, 5))
+st.scatter_chart(
+    data=data,
+    x="player",
+    y='average'
+)
 
-st.pyplot(fig)
-
-
-fig, axes = plt.subplots(1, 2, figsize=(6, 3))
-view_out = player_avg.pivot(columns='player', values='out_average')
-ax_out = view_out.plot(kind='box', ax=axes[0], widths=0.5, fontsize=7)
-
-# Customize the chart (optional)
-ax_out.set_title('Averages - OUT TURN', fontsize=7)
-ax_out.set_xlabel('Player', fontsize=7)
-ax_out.set_ylabel('Score', fontsize=7)
-ax_out.set_yticks(range(0, 5))
-
-view_in = player_avg.pivot(columns='player', values='in_average')
-ax_in = view_in.plot(kind='box', ax=axes[1], widths=0.5, fontsize=7)
-ax_in.set_title('Averages - IN TURN', fontsize=7)
-ax_in.set_xlabel('Player', fontsize=7)
-ax_in.set_ylabel('Score', fontsize=7)
-ax_in.set_yticks(range(0, 5))
-
-st.pyplot(fig)
+st.table(data)
