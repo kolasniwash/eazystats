@@ -1,4 +1,5 @@
 import json
+import altair as alt
 import streamlit as st
 import requests
 import matplotlib.pyplot as plt
@@ -108,10 +109,12 @@ data = get_summary_data(
 # st.pyplot(fig)
 #
 
-st.scatter_chart(
-    data=data,
-    x="player",
-    y='average'
+
+scatter_plot = alt.Chart(data).mark_circle().encode(
+    y=alt.Y('average', scale=alt.Scale(domain=[0, 4], clamp=False)),
+    x=alt.X('player')
 )
+
+st.altair_chart(scatter_plot, use_container_width=True)
 
 st.table(data)
