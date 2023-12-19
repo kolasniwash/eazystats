@@ -8,7 +8,7 @@ import pandas as pd
 
 _PLAYERS = ["nico", "edu", "luis", "sergio", "mikel"]
 
-st.title("Summary")
+st.title("Game Scoring Averages")
 
 def get_summary_data(event, playing_lineup, last_n_games):
     response = requests.get(
@@ -81,9 +81,6 @@ if scatter_view:
         y=alt.Y('average', scale=alt.Scale(domain=[0, 4], clamp=False)),
         x=alt.X('player')
     )
-
-    st.altair_chart(scatter_plot, use_container_width=True)
-
     scatter_plot_inturn = alt.Chart(player_avg).mark_circle().encode(
         y=alt.Y('in_average', scale=alt.Scale(domain=[0, 4], clamp=True)),
         x=alt.X('player')
@@ -92,11 +89,18 @@ if scatter_view:
         y=alt.Y('out_average', scale=alt.Scale(domain=[0, 4], clamp=True)),
         x=alt.X('player')
     )
-    st.altair_chart(scatter_plot_inturn)
 
-    st.altair_chart(scatter_plot_outturn)
+    st.altair_chart(scatter_plot, use_container_width=True)
+    col_left, col_right = st.columns(2)
+    with col_left:
+        st.header("In Turn")
+        st.altair_chart(scatter_plot_inturn, use_container_width=True)
+
+    with col_right:
+        st.header("Out Turn")
+        st.altair_chart(scatter_plot_outturn, use_container_width=True)
+
 else:
-
     fig, axes = plt.subplots(1, 1, figsize=(6, 3))
     view_averages = player_avg.pivot(columns='player', values='average')
     ax_averages = view_averages.plot(kind='box', ax=axes, fontsize=7)
