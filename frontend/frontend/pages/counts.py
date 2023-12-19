@@ -70,11 +70,12 @@ data = get_shot_count_data(
     last_n_games=last_n_games
 )
 
+data.columns = ["zero", "Done", "Ctwo", "Bthree", "Afour"]
 
 st.bar_chart(
     data=data,
     x=None,
-    y=["zero", "one", "two", "three", "four"],
+    y=["zero", "Done", "Ctwo", "Bthree", "Afour"],
     use_container_width=True
 )
 
