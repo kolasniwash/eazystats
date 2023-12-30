@@ -1,11 +1,11 @@
-from fastapi import APIRouter
+from fastapi import APIRouter, Request
 from backend.models.inputs import GameInput
 from backend.query.insert import (
     insert_into_game_details_query,
     insert_into_player_lineup_query,
     insert_shot_data_ddl
 )
-from pandas import read_csv
+from pandas import read_json
 from backend.db import get_postgres_connection
 
 router = APIRouter(
@@ -13,15 +13,12 @@ router = APIRouter(
     tags=["games"],
 )
 
-def load_local_shots_data(path):
-    df = read_csv(path)
-    df.to_csv(f"../data/processed/{path.split('/')[-1]}", index=False)
-    return df
-
-
 @router.post("/new")
 async def input_new_game(game: GameInput):
     game_dict = dict(game)
+
+    game_dict["game_result"] = game_dict["game_result"].lower()
+    game_dict["hammer"] = True if game_dict["hammer"] == "YES" else False
 
     with get_postgres_connection() as conn:
         cursor = conn.cursor()
@@ -37,7 +34,7 @@ async def input_new_game(game: GameInput):
             cursor.execute(player_lineup_query)
             conn.commit()
 
-    df_shots = load_local_shots_data(game_dict["file"])
+    df_shots = read_json(game_dict["input_json"], orient='records')
 
     with get_postgres_connection() as conn:
         cursor = conn.cursor()

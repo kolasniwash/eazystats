@@ -6,17 +6,24 @@ def insert_into_game_details_query(**kwargs):
         date,
         opponent,
         reg_ends,
-        tournament_round) 
+        tournament_round,
+        hammer,
+        result,
+        our_score,
+        opponent_score) 
         VALUES (
         '{kwargs['event_name']}',
         '{kwargs['season']}',
         '{kwargs['date']}',
         '{kwargs['opponent']}',
         '{kwargs['reg_ends']}',
-        '{kwargs['tournament_stage']}')
+        '{kwargs['tournament_stage']}',
+        '{kwargs['hammer']}',
+        '{kwargs['game_result']}',
+        '{kwargs['our_score']}',
+        '{kwargs['opponent_score']}')
         ON CONFLICT (event_name, season, opponent, tournament_round) DO NOTHING
         RETURNING game_id;"""
-    # cursor.execute(insert_game_details_ddl, tuple(df_game_details.values[0]))
 
 
 def insert_into_player_lineup_query(game_id, position, player):

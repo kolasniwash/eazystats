@@ -14,7 +14,7 @@ services:
       - "${PG_CONTAINER_PORT}:${PG_HOST_PORT}"
     volumes:
       - ./:/eazystats/
-      - ./data.dump:/docker-entrypoint-initdb.d/data.dump
+      - ./data/backups/eazystats.dump:/docker-entrypoint-initdb.d/eazystats.dump
       - ./db/:/docker-entrypoint-initdb.d/db/
       - ./scripts/init-db.sh:/docker-entrypoint-initdb.d/init-db.sh
       - postgres-data:/var/lib/postgresql/data
@@ -46,21 +46,6 @@ services:
       - "${FRONTEND_CONTAINER_PORT}:${FRONTEND_HOST_PORT}"
     volumes:
       - ./frontend:/app
-
-
-#  app:
-#    build:
-#      context: .
-#      dockerfile: Dockerfile
-#    depends_on:
-#      - postgres
-#    environment:
-#      - DB_HOST=postgres
-#      - DB_PASSWORD=abcd1234
-#    volumes:
-#      - ./:/code
-#    ports:
-#      - "5005:80"
 
 volumes:
   postgres-data:

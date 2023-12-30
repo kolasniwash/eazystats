@@ -1,108 +1,66 @@
-import json
 import streamlit as st
-import requests
-import matplotlib.pyplot as plt
-import pandas as pd
 
 
-_PLAYERS = ["nico", "edu", "luis", "sergio", "mikel"]
+_PLAYERS = ["luis", 'edu', 'sergio', 'mikel', 'nico']
 
-st.title("Summary")
+st.title("Performance Summary")
 
-def get_summary_data(event, playing_lineup, last_n_games):
-    response = requests.get(
-        "http://backend:8000/eazystats/v1/views/player_averages",
-        params={
-            "event": event,
-            **playing_lineup,
-            "last_n_games": last_n_games
-        }
-    )
-    print(response)
-    return pd.read_json(response.json()["data"])
+st.header("Season Summary")
 
-def get_available_events_list():
-    return ["WCT Bern", "WCT Tallinn"]
-
-last_n_games = st.select_slider(
-    label="Select Number of games to include:",
-    options=[i for i in range(1, 21)],
-    value=7
-)
-
-event = st.sidebar.selectbox(
-    "Select Event",
-    get_available_events_list(),
-    index=None
-)
-
-lead = st.sidebar.selectbox(
-    "Lead:",
-    _PLAYERS,
-    index=None
-)
-
-second = st.sidebar.selectbox(
-    "Second:",
-    _PLAYERS,
-    index=None
-)
-
-third = st.sidebar.selectbox(
-    "Third:",
-    _PLAYERS,
-    index=None
-)
-
-fourth = st.sidebar.selectbox(
-    "Fourth:",
-    _PLAYERS,
-    index=None
-)
-
-lineup = {
-    "lead": lead,
-    "second": second,
-    "third": third,
-    "fourth": fourth
+stats = {
+    "hammer_eff": 0.5,
+    "steal_eff": 0.5,
+    "force_eff": 0.5,
+    "steal_def": 0.5,
+    "big_end_per_game": 0.5,
+    "points_for_per_game": 0.5,
+    "points_against_per_game": 0.5
 }
 
-player_avg = get_summary_data(
-    event=event,
-    playing_lineup=lineup,
-    last_n_games=last_n_games
-)
+col1, col2, col3 = st.columns(3)
 
+with col1:
+    st.text("Wins: X")
+    st.text("Losses: X")
 
+with col2:
+    st.text(f"Hammer Efficiency: {stats['hammer_eff']}")
+    st.text(f"Steal Efficiency: {stats['steal_eff']}")
+    st.text(f"Force Efficiency: {stats['force_eff']}")
+    st.text(f"Steal Defence: {stats['steal_def']}")
 
-fig, axes = plt.subplots(1, 1, figsize=(6,3))
-view_averages = player_avg.pivot(columns='player', values='average')
-ax_averages = view_averages.plot(kind='box', ax=axes, fontsize=7)
+with col3:
+    st.text(f"Big Ends / Game: {stats['big_end_per_game']}")
+    st.text(f"Points Score / Game: {stats['points_for_per_game']}")
+    st.text(f"Points Given / Game: {stats['points_against_per_game']}")
 
-# Customize the chart (optional)
-ax_averages.set_title('Range of game scoring averages', fontsize=7)
-ax_averages.set_xlabel('Player', fontsize=7)
-ax_averages.set_ylabel('Score', fontsize=7)
-ax_averages.set_yticks(range(0, 5))
+st.header("Throwing Average")
 
-st.pyplot(fig)
+query_averages = {
+    "luis": 0.5,
+    'edu': 0.5,
+    "sergio": 0.5,
+    "mikel": 0.5,
+    "nico": 0.5
+}
+cols = st.columns(5)
+for col, (player, average) in zip(cols, query_averages.items()):
+    with st.container():
+        col.text(player)
+        col.text(average)
 
+st.header("Made After Miss")
 
-fig, axes = plt.subplots(1, 2, figsize=(6, 3))
-view_out = player_avg.pivot(columns='player', values='out_average')
-ax_out = view_out.plot(kind='box', ax=axes[0], widths=0.5, fontsize=7)
+query_made_after_miss = {
+    "luis": 0.5,
+    'edu': 0.5,
+    "sergio": 0.5,
+    "mikel": 0.5,
+    "nico": 0.5
+}
 
-# Customize the chart (optional)
-ax_out.set_title('Averages - OUT TURN', fontsize=7)
-ax_out.set_xlabel('Player', fontsize=7)
-ax_out.set_ylabel('Score', fontsize=7)
-ax_out.set_yticks(range(0, 5))
-
-view_in = player_avg.pivot(columns='player', values='in_average')
-ax_in = view_in.plot(kind='box', ax=axes[1], widths=0.5, fontsize=7)
-ax_in.set_title('Averages - IN TURN', fontsize=7)
-ax_in.set_xlabel('Player', fontsize=7)
-ax_in.set_ylabel('Score', fontsize=7)
-ax_in.set_yticks(range(0, 5))
-
-st.pyplot(fig)
+cols = st.columns(5)
+for col, (player, mam) in zip(cols, query_made_after_miss.items()):
+    with st.container():
+        col.text(player)
+        col.text(mam)

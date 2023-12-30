@@ -2,10 +2,11 @@ from typing import List, Optional
 from pydantic import BaseModel
 
 class GameInput(BaseModel):
-    file: str
+    input_json: str
     our_score: int
     opponent_score: int
     opponent: str
+    hammer: str
     date: str
     game_result: str
     event_name: str
