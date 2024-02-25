@@ -5,6 +5,7 @@ class GameInput(BaseModel):
     input_json: str
     our_score: int
     opponent_score: int
+    team: str
     opponent: str
     hammer: str
     date: str

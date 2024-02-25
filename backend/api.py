@@ -2,7 +2,7 @@
 import pandas as pd
 import sqlite3
 from fastapi import FastAPI
-from backend.routes import games, views
+from backend.routes import games, views, players
 from dotenv import load_dotenv
 
 
@@ -25,6 +25,11 @@ app.include_router(
 app.include_router(
     prefix=app_prefix,
     router=views.router
+)
+
+app.include_router(
+    prefix=app_prefix,
+    router=players.router
 )
 
 def setup_tables(reset_tables=False):
