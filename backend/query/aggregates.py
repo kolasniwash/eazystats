@@ -67,3 +67,43 @@ def get_player_averages_query(**kwargs):
         playing_lineup_filter="AND " + " OR ".join(positions) if len(positions) > 0 else "",
         last_n_games=kwargs.get("last_n_games", 1)
     )
+
+
+
+def get_shot_type_counts(**kwargs):
+    return f"""with games as (
+                select game_id, team
+                from game_details
+                where team = '{kwargs.get('team', 'txuri')}'
+                ),
+            players_shots as (
+                select
+                    st.thrower_position as position,
+                    st.shot_type,
+                    split_part(st.shot_type, ':', 1) as shot_type_simple,
+                    st.score,
+                    pl.player
+                from games as g
+                inner join shots_table as st
+                    on g.game_id = st.game_id
+                inner join player_lineup as pl
+                    on pl.game_id=st.game_id
+                    and pl.position=st.thrower_position
+            )
+            select position,
+                   COALESCE(player, 'team') as player,
+                   shot_type as type,
+                   shot_type_simple as simple_type,
+                   SUM(score) as score,
+                   COUNT(*) as count
+            from players_shots
+            group by grouping sets (
+                (),
+                (shot_type),
+                (shot_type_simple),
+                (position, player),
+                (position, player, shot_type),
+                (position, player, shot_type_simple)
+                )
+            order by position, player
+    """

@@ -3,8 +3,8 @@ RUN apt-get update
 
 WORKDIR /app
 
-COPY ./frontend/requirements.txt ./app/requirements.txt
+COPY ./frontend/requirements.txt ./frontend/requirements.txt
 
-RUN pip install --no-cache-dir --upgrade -r ./app/requirements.txt
+RUN pip install --no-cache-dir --upgrade -r ./frontend/requirements.txt
 
-CMD ["streamlit", "run", "./frontend/home.py","--server.enableXsrfProtection=false", "--server.enableCORS=false", "--server.port=8501", "--server.address=0.0.0.0"]
+CMD ["python", "-m", "streamlit", "run", "./frontend/dashboard/home.py","--server.enableXsrfProtection=false", "--server.enableCORS=false", "--server.port=8501", "--server.address=0.0.0.0"]

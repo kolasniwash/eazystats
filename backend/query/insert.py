@@ -10,7 +10,8 @@ def insert_into_game_details_query(**kwargs):
         hammer,
         result,
         our_score,
-        opponent_score) 
+        opponent_score,
+        team) 
         VALUES (
         '{kwargs['event_name']}',
         '{kwargs['season']}',
@@ -21,8 +22,9 @@ def insert_into_game_details_query(**kwargs):
         '{kwargs['hammer']}',
         '{kwargs['game_result']}',
         '{kwargs['our_score']}',
-        '{kwargs['opponent_score']}')
-        ON CONFLICT (event_name, season, opponent, tournament_round) DO NOTHING
+        '{kwargs['opponent_score']}',
+        '{kwargs['team']}')
+        ON CONFLICT (event_name, season, team, opponent, tournament_round) DO NOTHING
         RETURNING game_id;"""
 
 

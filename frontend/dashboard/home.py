@@ -1,9 +1,9 @@
 import json
-from datetime import datetime
 from pandas import read_csv
 
 import streamlit as st
 import requests
+from utils import get_events_list, _TEAM_LINEUPS, get_unique_players
 
 _PLACEHOLDER_SELECT = "Choose option"
 _PLACEHOLDER_FILL = "Please fill in"
@@ -19,6 +19,20 @@ st.title("Game Input Form")
 # file_path = st.text_input("CSV File Path:", placeholder=_PLACEHOLDER_FILL)
 input_file = st.file_uploader(label="File", type='csv')
 st.title("Game Results")
+
+# games 2 and 4: pablo, iñigo, eneko y carasa
+# games 5, 6 and 7: iñigo, iraitz, eneko y carasa
+
+def add_new_option(name_input, key):
+    if name_input == "ADD NEW...":
+        name_input = st.text_input("Enter new name...", key=key)
+    return name_input
+
+teams = list(_TEAM_LINEUPS.keys()) + ["ADD NEW..."]
+team_name_input = st.selectbox("Select team", options=teams)
+_INPUT_DICT["team"] = add_new_option(team_name_input, "team")
+st.info(f"Team: {_INPUT_DICT['team']}")
+
 _INPUT_DICT["our_score"] = st.text_input("Our Score:", placeholder=_PLACEHOLDER_FILL)
 _INPUT_DICT["opponent_score"] = st.text_input("Opponent Score:", placeholder=_PLACEHOLDER_FILL)
 _INPUT_DICT["opponent"] = st.text_input("Opponent Name:", placeholder=_PLACEHOLDER_FILL)
@@ -34,7 +48,7 @@ _INPUT_DICT["game_result"] = st.selectbox(
 
 _INPUT_DICT["event_name"] = st.selectbox(
     "Event Name:",
-    ["WCT Tallinn", "WCT Bern", "WCT Lodz"],
+    get_events_list(),
     placeholder=_PLACEHOLDER_SELECT
 )
 
@@ -57,35 +71,42 @@ _INPUT_DICT["tournament_stage"] = st.selectbox(
 )
 
 st.title("Playing Positions:")
-_PLAYERS = ["nico", "edu", "luis", "mikel", "sergio"]
-_INPUT_DICT["lead"] = st.selectbox("Lead", _PLAYERS, placeholder="luis")
-_INPUT_DICT["second"] = st.selectbox("Second", _PLAYERS, placeholder=_PLACEHOLDER_SELECT)
-_INPUT_DICT["third"] = st.selectbox("Third", _PLAYERS, placeholder=_PLACEHOLDER_SELECT)
-_INPUT_DICT["fourth"] = st.selectbox("Fourth", _PLAYERS, placeholder=_PLACEHOLDER_SELECT)
-_INPUT_DICT["alternate"] = st.selectbox("Alternate", _PLAYERS, placeholder=_PLACEHOLDER_SELECT)
+TEAM_PLAYERS = get_unique_players(team_name_input) if team_name_input in _TEAM_LINEUPS else []
+_PLAYER_OPTIONS = TEAM_PLAYERS + ["ADD NEW..."]
+st.info(f"Players: {_PLAYER_OPTIONS}")
+
+lead_input = st.selectbox("Lead", options=_PLAYER_OPTIONS)
+_INPUT_DICT["lead"] = add_new_option(lead_input, "lead")
+st.info(f"lead: {_INPUT_DICT['lead']}")
+
+second_input = st.selectbox("Second", options=_PLAYER_OPTIONS)
+_INPUT_DICT["second"] = add_new_option(second_input, "second")
+st.info(f"second: {_INPUT_DICT['second']}")
+
+third_input = st.selectbox("Third", options=_PLAYER_OPTIONS)
+_INPUT_DICT["third"] = add_new_option(third_input, "third")
+st.info(f"third: {_INPUT_DICT['third']}")
+
+fourth_input = st.selectbox("Fourth", options=_PLAYER_OPTIONS)
+_INPUT_DICT["fourth"] = add_new_option(fourth_input, "fourth")
+st.info(f"fourth: {_INPUT_DICT['fourth']}")
+
+alternate_input = st.selectbox("Alternate", options=_PLAYER_OPTIONS)
+_INPUT_DICT["alternate"] = add_new_option(alternate_input, "alternate")
+st.info(f"alternate: {_INPUT_DICT['alternate']}")
 
 
 if st.button("Submit"):
-    print("Submit")
-    print(_INPUT_DICT)
+    st.info("Submit")
+    st.info(_INPUT_DICT)
 
-
-    #read the input file in the frontend
-    #convert to json
-    #pass the json string to the backend with the other data
-    #save the json data as record
-
-    #### add started with hammer
     df = read_csv(input_file)
+    df = df[df["SCORE"] < 5]
     _INPUT_DICT['input_json'] = df.to_json(orient='records')
 
     r = requests.post("http://backend:8000/eazystats/v1/games/new",
                   data=json.dumps(_INPUT_DICT))
-    print(r.status_code)
+    st.info(r.status_code)
     if r.status_code == 200:
-        # filename = f"{_INPUT_DICT['event_name']}-{_INPUT_DICT['opponent']}-{datetime.now()}.json"
-        # with open(f"~/data/raw/{filename}", 'w+') as json_file:
-        #     json.dump(_INPUT_DICT, json_file)
-
         st.success("Game successfully submitted!")
 
